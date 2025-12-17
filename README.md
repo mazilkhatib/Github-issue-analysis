@@ -12,7 +12,7 @@ A backend server that fetches GitHub issues and analyzes them using LLMs.
 - **Runtime**: Node.js + TypeScript
 - **Framework**: Express.js
 - **Database**: SQLite with Prisma ORM
-- **LLM**: Ollama (local, primary) / OpenRouter (cloud, fallback)
+- **LLM**: OpenRouter (cloud, primary) / Ollama (local, fallback)
 - **Text Chunking**: LangChain `RecursiveCharacterTextSplitter` (with 10% overlap)
 
 ## Storage Choice: SQLite + Prisma
