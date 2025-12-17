@@ -40,9 +40,9 @@ cp .env.example .env
 ```
 
 Edit `.env` and configure:
-- `OLLAMA_HOST` - Ollama server URL (default: `http://localhost:11434`)
-- `OLLAMA_MODEL` - Model to use (default: `deepseek-r1`)
-- `OPENROUTER_API_KEY` (optional) - Get from [OpenRouter](https://openrouter.ai/keys) as fallback
+- `OPENROUTER_API_KEY` - Get from [OpenRouter](https://openrouter.ai/keys) (primary LLM)
+- `OLLAMA_HOST` (optional) - Ollama server URL for local fallback (default: `http://localhost:11434`)
+- `OLLAMA_MODEL` (optional) - Local model to use (default: `deepseek-r1`)
 - `GITHUB_TOKEN` (optional) - For private repos or higher rate limits
 
 ### 3. Initialize Database
@@ -106,7 +106,7 @@ curl -X POST http://localhost:3000/analyze \
 | `Repository not scanned` | Calling /analyze before /scan | Run /scan first |
 | `Repository not found` | Invalid repo name | Check owner/repo format |
 | `Rate limit exceeded` | Too many GitHub API calls | Add GITHUB_TOKEN |
-| `All LLM providers failed` | Ollama not running + no OpenRouter key | Start Ollama or add OPENROUTER_API_KEY |
+| `All LLM providers failed` | No OpenRouter key + Ollama not running | Add OPENROUTER_API_KEY or start Ollama |
 
 ## Project Structure
 
