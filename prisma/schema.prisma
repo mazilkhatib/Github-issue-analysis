@@ -1,0 +1,24 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Issue {
+  id        Int      @id @default(autoincrement())
+  repo      String   // Format: owner/repository-name
+  githubId  BigInt   // GitHub's issue ID (can exceed 32-bit int)
+  title     String
+  body      String?
+  htmlUrl   String
+  createdAt DateTime
+
+  @@unique([repo, githubId])
+  @@index([repo])
+}
