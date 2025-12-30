@@ -4,8 +4,10 @@ A backend server that fetches GitHub issues and analyzes them using LLMs.
 
 ## Features
 
-- **POST /scan** - Fetch and cache all open issues from a GitHub repository
+- **POST /scan** - Fetch and cache all open issues with progressive scanning
 - **POST /analyze** - Analyze cached issues using natural language prompts
+- **GraphQL pagination** - Unlimited issue fetching (no 10k limit)
+- **GitHub App auth** - 5,000 requests/hour (vs 60 unauthenticated)
 
 ## Tech Stack
 
@@ -41,17 +43,43 @@ cp .env.example .env
 
 Edit `.env` and configure:
 - `OPENROUTER_API_KEY` - Get from [OpenRouter](https://openrouter.ai/keys) (primary LLM)
-- `OLLAMA_HOST` (optional) - Ollama server URL for local fallback (default: `http://localhost:11434`)
-- `OLLAMA_MODEL` (optional) - Local model to use (default: `deepseek-r1`)
-- `GITHUB_TOKEN` (optional) - For private repos or higher rate limits
+- `OLLAMA_HOST` (optional) - Ollama server URL for local fallback
+- `GITHUB_TOKEN` (optional) - For 5,000 req/hour (or use GitHub App below)
 
-### 3. Initialize Database
+### 3. GitHub App Setup (Recommended - 5,000 req/hour)
+
+For scanning large repositories (10,000+ issues), set up a GitHub App:
+
+1. **Create the App** at https://github.com/settings/apps/new
+   - App Name: `GitHub Issue Analyzer` (or unique name)
+   - Homepage URL: `http://localhost:3000`
+   - Webhook: Uncheck "Active"
+   - Permissions: `Issues` → Read-only, `Metadata` → Read-only
+
+2. **Get Credentials**
+   - Note the **App ID** from the app page
+   - Generate and download a **Private Key** (.pem file)
+   - Save the .pem file in your project root as `github-app-private-key.pem`
+
+3. **Install the App**
+   - Go to https://github.com/settings/installations
+   - Install your app on your account/repos
+   - Note the **Installation ID** from the URL
+
+4. **Configure .env**
+   ```env
+   GITHUB_APP_ID=your_app_id
+   GITHUB_APP_PRIVATE_KEY_PATH=./github-app-private-key.pem
+   GITHUB_APP_INSTALLATION_ID=your_installation_id
+   ```
+
+### 4. Initialize Database
 
 ```bash
 npm run db:push
 ```
 
-### 4. Start Server
+### 5. Start Server
 
 ```bash
 # Development (with hot reload)
@@ -67,18 +95,32 @@ npm start
 ### Scan Repository
 
 ```bash
+# Start/resume a scan
 curl -X POST http://localhost:3000/scan \
   -H "Content-Type: application/json" \
   -d '{"repo": "facebook/react"}'
+
+# Force fresh scan (clears old data)
+curl -X POST http://localhost:3000/scan \
+  -H "Content-Type: application/json" \
+  -d '{"repo": "facebook/react", "fresh": true}'
 ```
 
 **Response:**
 ```json
 {
   "repo": "facebook/react",
-  "issues_fetched": 842,
-  "cached_successfully": true
+  "status": "completed",
+  "progress": { "currentPage": 15, "issuesFetched": 842 },
+  "message": "Scan completed! Fetched 842 open issues.",
+  "rateLimit": { "remaining": 4985, "limit": 5000 }
 }
+```
+
+### Check Scan Status
+
+```bash
+curl http://localhost:3000/scan/facebook%2Freact/status
 ```
 
 ### Analyze Issues
@@ -88,15 +130,8 @@ curl -X POST http://localhost:3000/analyze \
   -H "Content-Type: application/json" \
   -d '{
     "repo": "facebook/react",
-    "prompt": "What are the top 5 most common issue themes? What should maintainers fix first?"
+    "prompt": "What are the top 5 most common issue themes?"
   }'
-```
-
-**Response:**
-```json
-{
-  "analysis": "<LLM-generated analysis>"
-}
 ```
 
 ## Error Handling
@@ -105,8 +140,8 @@ curl -X POST http://localhost:3000/analyze \
 |-------|-------|----------|
 | `Repository not scanned` | Calling /analyze before /scan | Run /scan first |
 | `Repository not found` | Invalid repo name | Check owner/repo format |
-| `Rate limit exceeded` | Too many GitHub API calls | Add GITHUB_TOKEN |
-| `All LLM providers failed` | No OpenRouter key + Ollama not running | Add OPENROUTER_API_KEY or start Ollama |
+| `Rate limit exceeded` | Too many API calls | Set up GitHub App |
+| `All LLM providers failed` | No API key + Ollama not running | Add OPENROUTER_API_KEY |
 
 ## Project Structure
 
