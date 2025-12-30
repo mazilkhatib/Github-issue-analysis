@@ -1,10 +1,10 @@
-import express from 'express';
 import dotenv from 'dotenv';
+// Load environment variables FIRST, before any other imports
+dotenv.config();
+
+import express from 'express';
 import scanRouter from './routes/scan';
 import analyzeRouter from './routes/analyze';
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
