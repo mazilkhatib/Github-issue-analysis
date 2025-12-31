@@ -22,3 +22,18 @@ model Issue {
   @@unique([repo, githubId])
   @@index([repo])
 }
+
+// Track progressive scan progress for rate-limited fetching
+model ScanProgress {
+  id            Int       @id @default(autoincrement())
+  repo          String    @unique // Format: owner/repository-name
+  status        String    // 'pending' | 'in_progress' | 'completed' | 'failed'
+  totalPages    Int?      // Estimated total pages (updated as we scan)
+  currentPage   Int       @default(0)
+  issuesFetched Int       @default(0)
+  cursor        String?   // GraphQL pagination cursor
+  startedAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  errorMessage  String?
+  nextRetryAt   DateTime? // When to retry after rate limit hit
+}
