@@ -164,53 +164,68 @@ curl -X POST http://localhost:3000/analyze \
 └── README.md
 ```
 
-## Prompts Used While Building
+## How It Works
 
-### AI Coding Tool Prompts
+### Chunking Strategy
 
-These are the prompts I used while building this project with AI assistance:
+For large repositories with many issues, the system uses **LangChain's `RecursiveCharacterTextSplitter`** to handle context limitations:
 
-1. **Initial Setup**: "Create a Node.js + TypeScript backend server with Express that has two endpoints: POST /scan to fetch GitHub issues and POST /analyze to analyze them with an LLM"
-
-2. **GitHub Integration**: "How do I use @octokit/rest to fetch all open issues from a repository with pagination?"
-
-3. **Database Design**: "Design a Prisma schema for storing GitHub issues with fields for id, title, body, html_url, and created_at"
-
-4. **Error Handling**: "Add proper error handling for rate limits and not found errors in the GitHub API"
-
-### LLM Request Construction Prompts
-
-The prompt template used in the `/analyze` endpoint (`llm.ts`):
-
-```
-You are an expert software analyst. Analyze the following GitHub issues and respond to the user's request.
-
-USER REQUEST: {user's prompt}
-
-GITHUB ISSUES:
-{formatted issues with title, URL, date, and description}
-
-Please provide a clear, structured analysis based on the issues above.
-```
-
-### Chunking Strategy (LangChain)
-
-For large repositories with many issues, the system uses **LangChain's `RecursiveCharacterTextSplitter`** with:
 - **Chunk size**: 25,000 characters (~6,250 tokens)
 - **Chunk overlap**: 2,500 characters (10%) for context preservation
 - **Separators**: `['\n---\n', '\n\n', '\n', ' ', '']` (splits by issue boundaries first)
 
-Each chunk is summarized with:
+The analysis process works in two stages:
 
-```
-Summarize the key themes, common problems, and notable issues in this batch (batch X of Y). Be concise.
-```
+1. **Per-chunk summary**: Each chunk is analyzed with the prompt:
+   ```
+   Summarize the key themes, common problems, and notable issues in this batch (batch X of Y). Be concise.
+   ```
 
-Then combines summaries with:
+2. **Final synthesis**: All chunk summaries are combined and analyzed with:
+   ```
+   Based on these summaries of GitHub issues from a repository, {user's original prompt}
+   ```
 
-```
-Based on these summaries of GitHub issues from a repository, {user's original prompt}
-```
+This approach enables analysis of repositories with thousands of issues while maintaining context and accuracy.
+
+## Contributing
+
+We welcome contributions! Here are some ways you can help:
+
+### Reporting Issues
+
+- Search existing issues before creating new ones
+- Include steps to reproduce, expected behavior, and actual behavior
+- Provide environment details (OS, Node version, etc.)
+
+### Pull Requests
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes and ensure tests pass
+4. Commit with clear, descriptive messages
+5. Push to your branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
+
+### Development Guidelines
+
+- **Code Style**: Follow existing TypeScript conventions
+- **Testing**: Add tests for new features
+- **Documentation**: Update README and API docs as needed
+- **Commits**: Use conventional commit messages (feat:, fix:, docs:, etc.)
+
+### Areas for Contribution
+
+- **Additional LLM providers**: Support for more AI services
+- **Enhanced analysis**: Sentiment analysis, issue clustering, trend detection
+- **UI/Frontend**: Web dashboard for browsing and analyzing issues
+- **Performance**: Caching optimizations, database indexing
+- **Testing**: Unit tests, integration tests, E2E tests
+- **Documentation**: API docs, tutorials, examples
+
+### Code of Conduct
+
+Be respectful, inclusive, and constructive. We're all here to build something great together.
 
 ## License
 
